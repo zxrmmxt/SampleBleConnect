@@ -56,24 +56,36 @@ public class BleManager {
     }
 
     public void doConnect() {
-        synchronized (BleManager.class) {
-            if (myBleUtils.getBleDevice() == null) {
-                return;
-            }
+        connectHandler.post(new Runnable() {
+            @Override
+            public void run() {
 
-            if (myBleUtils.isConnected()) {
-                if (TextUtils.equals(myBleUtils.getDeviceAddress(), BLE_ADDRESS)) {
-                    return;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-                disconnect();
-            }
 
-            if (myBleUtils.isConnecting()) {
-                return;
-            }
+                synchronized (BleManager.class) {
+                    if (myBleUtils.getBleDevice() == null) {
+                        return;
+                    }
 
-            myBleUtils.connect();
-        }
+                    if (myBleUtils.isConnected()) {
+                        if (TextUtils.equals(myBleUtils.getDeviceAddress(), BLE_ADDRESS)) {
+                            return;
+                        }
+                        disconnect();
+                    }
+
+                    if (myBleUtils.isConnecting()) {
+                        return;
+                    }
+
+                    myBleUtils.connect();
+                }
+            }
+        });
     }
 
     public void disconnect() {
@@ -107,12 +119,7 @@ public class BleManager {
 
         myBleUtils.setBleDevice(device);
 
-        connectHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                doConnect();
-            }
-        }, 1000);
+        doConnect();
     }
 
 }
