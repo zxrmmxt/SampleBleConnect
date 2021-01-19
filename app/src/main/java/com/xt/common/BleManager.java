@@ -1,15 +1,15 @@
 package com.xt.common;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
+import android.os.Handler;
 import android.text.TextUtils;
 
 import com.xt.common.ble.connect.MyBleUtils;
 import com.xt.common.ble.connect.MyScanUtils;
-import com.xt.common.utils.BleBroadcastUtils;
 import com.xt.common.utils.MyLogUtils;
+import com.xt.common.utils.thread.MyThreadUtils;
 
 public class BleManager {
     private static BleManager instance;
@@ -18,6 +18,8 @@ public class BleManager {
 
     private static final String BLE_NAME = "OPPO R11s Plus";
     private static final String BLE_ADDRESS = "d4:1a:3f:c0:b0:3e";
+
+    private Handler connectHandler = MyThreadUtils.getThreadHandler();
 
     public static BleManager getInstance() {
         if (instance == null) {
@@ -35,7 +37,7 @@ public class BleManager {
             public void onMyBle(MyBleUtils.MyBleData myBleData) {
                 String myBleAction = myBleData.getMyBleAction();
                 if (TextUtils.equals(myBleAction, MyBleUtils.ACTION_GATT_CONNECTED)) {
-                    MyLogUtils.d(BleManager.class.getSimpleName(),"连接成功");
+                    MyLogUtils.d(BleManager.class.getSimpleName(), "连接成功");
                 }
                 if (TextUtils.equals(myBleAction, MyBleUtils.ACTION_GATT_DISCONNECTED)) {
                     doConnect();
@@ -54,22 +56,24 @@ public class BleManager {
     }
 
     public void doConnect() {
-        if (myBleUtils.getBleDevice() == null) {
-            return;
-        }
-
-        if (myBleUtils.isConnected()) {
-            if (TextUtils.equals(myBleUtils.getDeviceAddress(), BLE_ADDRESS)) {
+        synchronized (BleManager.class) {
+            if (myBleUtils.getBleDevice() == null) {
                 return;
             }
-            disconnect();
-        }
 
-        if (myBleUtils.isConnecting()) {
-            return;
-        }
+            if (myBleUtils.isConnected()) {
+                if (TextUtils.equals(myBleUtils.getDeviceAddress(), BLE_ADDRESS)) {
+                    return;
+                }
+                disconnect();
+            }
 
-        myBleUtils.connect();
+            if (myBleUtils.isConnecting()) {
+                return;
+            }
+
+            myBleUtils.connect();
+        }
     }
 
     public void disconnect() {
@@ -103,7 +107,12 @@ public class BleManager {
 
         myBleUtils.setBleDevice(device);
 
-        doConnect();
+        connectHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                doConnect();
+            }
+        }, 1000);
     }
 
 }
