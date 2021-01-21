@@ -198,6 +198,7 @@ public class MyBleUtils {
      * 蓝牙断开连接
      */
     public void disconnect() {
+        mConnectionState = STATE_DISCONNECTED;
         if (mBluetoothGatt == null) {
             return;
         }
@@ -209,6 +210,7 @@ public class MyBleUtils {
      * gattCallback收到STATE_DISCONNECTED后再执行gatt.close();，这样逻辑上会更清析一些。
      */
     public void closeBle() {
+        mConnectionState = STATE_DISCONNECTED;
         if (mBluetoothGatt == null) {
             return;
         }

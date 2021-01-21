@@ -19,7 +19,11 @@ public class BleManager {
     private static final String BLE_NAME = "OPPO R11s Plus";
     private static final String BLE_ADDRESS = "d4:1a:3f:c0:b0:3e";
 
+    private BluetoothDevice mBluetoothDevice;
+
     private Handler connectHandler = MyThreadUtils.getThreadHandler();
+
+    private int connectingCounts;
 
     public static BleManager getInstance() {
         if (instance == null) {
@@ -55,6 +59,21 @@ public class BleManager {
         });
     }
 
+    private void onScanResult(BluetoothDevice device) {
+        String name = device.getName();
+        if (TextUtils.isEmpty(name)) {
+            return;
+        }
+
+        if (!TextUtils.equals(name, BLE_NAME)) {
+            return;
+        }
+
+        mBluetoothDevice = device;
+
+        doConnect();
+    }
+
     public void doConnect() {
         connectHandler.post(new Runnable() {
             @Override
@@ -66,32 +85,35 @@ public class BleManager {
                     e.printStackTrace();
                 }
 
-                synchronized (BleManager.class) {
-                    if (myBleUtils.getBleDevice() == null) {
-                        return;
-                    }
-
-                    if (myBleUtils.isConnected()) {
-                        if (TextUtils.equals(myBleUtils.getDeviceAddress(), BLE_ADDRESS)) {
-                            return;
-                        }
+                if (myBleUtils.isConnecting()) {
+                    connectingCounts = connectingCounts + 1;
+                    if (connectingCounts > 8) {
+                        connectingCounts = 0;
                         disconnect();
+                        myBleUtils.closeBle();
                     }
-
-                    if (myBleUtils.isConnecting()) {
-                        return;
-                    }
-
-                    myBleUtils.connect();
+                    return;
                 }
+
+                if (mBluetoothDevice == null) {
+                    return;
+                }
+
+                if (myBleUtils.isConnected()
+                        && TextUtils.equals(myBleUtils.getBleDevice().getAddress(), mBluetoothDevice.getAddress())) {
+                    return;
+                }
+                disconnect();
+                myBleUtils.closeBle();
+
+                myBleUtils.setBleDevice(mBluetoothDevice);
+
+                myBleUtils.connect();
             }
         });
     }
 
     public void disconnect() {
-        if (myBleUtils.isDisconnected()) {
-            return;
-        }
         myBleUtils.disconnect();
     }
 
@@ -102,24 +124,4 @@ public class BleManager {
     public MyScanUtils getMyScanUtils() {
         return myScanUtils;
     }
-
-    private void onScanResult(BluetoothDevice device) {
-        String name = device.getName();
-        if (TextUtils.isEmpty(name)) {
-            return;
-        }
-
-        if (!TextUtils.equals(name, BLE_ADDRESS)) {
-            return;
-        }
-
-        if (TextUtils.equals(BLE_ADDRESS, myBleUtils.getDeviceAddress())) {
-            return;
-        }
-
-        myBleUtils.setBleDevice(device);
-
-        doConnect();
-    }
-
 }
