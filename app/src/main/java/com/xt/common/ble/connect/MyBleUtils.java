@@ -18,12 +18,14 @@ import androidx.annotation.RequiresApi;
 
 import com.blankj.utilcode.util.Utils;
 import com.xt.common.utils.BleBroadcastUtils;
+import com.xt.common.utils.MyLogUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class MyBleUtils {
+    private static final String TAG = MyBleUtils.class.getSimpleName();
     private final List<OnMyBleCallback> onMyBleCallbackList = new ArrayList<>();
 
     private BluetoothDevice mBluetoothDevice;

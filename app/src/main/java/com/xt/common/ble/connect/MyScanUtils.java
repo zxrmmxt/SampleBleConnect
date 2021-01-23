@@ -85,6 +85,10 @@ public class MyScanUtils {
     }
 
     public void startBleScan() {
+        startBleScan(null);
+    }
+
+    public void startBleScan(ScanFilter.Builder builder) {
         if (!isGranted(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)) {
             return;
         }
@@ -102,19 +106,14 @@ public class MyScanUtils {
         }
 
         bluetoothLeScanner.stopScan(mInnerScanCallback);
-        bluetoothLeScanner.startScan(buildScanFilters(MyBleUtils.SERVICE_UUID), buildScanSettings(), mInnerScanCallback);
+        bluetoothLeScanner.startScan(buildScanFilters(builder), buildScanSettings(), mInnerScanCallback);
     }
 
-    private List<ScanFilter> buildScanFilters(ParcelUuid serviceUuid) {
+    private List<ScanFilter> buildScanFilters(ScanFilter.Builder builder) {
         List<ScanFilter> scanFilters = new ArrayList<>();
-        ScanFilter.Builder builder = new ScanFilter.Builder();
-        // Comment out the below line to see all BLE devices around you
-        if (isScanFilterServiceUuid) {
-            if (serviceUuid != null) {
-                builder.setServiceUuid(serviceUuid);
-            }
+        if (builder != null) {
+            scanFilters.add(builder.build());
         }
-        scanFilters.add(builder.build());
         return scanFilters;
     }
 

@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.os.Bundle;
 import android.view.View;
@@ -38,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
         if (PermissionUtils.isGranted(permissions)) {
             MyBleUtils.enable();
-            BleManager.getInstance().getMyScanUtils().startBleScan();
+            BleManager.getInstance().scanBle();
             return;
         }
         PermissionUtils.permission(PermissionConstants.LOCATION).callback(new PermissionUtils.SingleCallback() {
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 MyBleUtils.enable();
-                BleManager.getInstance().getMyScanUtils().startBleScan();
+                BleManager.getInstance().scanBle();
             }
         }).request();
     }
