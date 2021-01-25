@@ -86,6 +86,11 @@ public class BleManager {
                     if (TextUtils.equals(mBluetoothDevice.getName(), name)) {
                         return;
                     }
+                    mBluetoothDevice = null;
+                }
+
+                if (!TextUtils.equals(name, BLE_NAME)) {
+                    return;
                 }
 
                 mBluetoothDevice = device;
@@ -151,7 +156,8 @@ public class BleManager {
     public MyScanUtils getMyScanUtils() {
         return myScanUtils;
     }
-    public void scanBle(){
+
+    public void scanBle() {
         BleManager.getInstance().getMyScanUtils().startBleScan(new ScanFilter.Builder().setDeviceName("OPPO R11s Plus"));
     }
 }
