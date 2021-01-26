@@ -18,7 +18,6 @@ import androidx.annotation.RequiresApi;
 
 import com.blankj.utilcode.util.Utils;
 import com.xt.common.utils.BleBroadcastUtils;
-import com.xt.common.utils.MyLogUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,8 +68,6 @@ public class MyBleUtils {
     private static final ParcelUuid CHARACTERISTIC_WRITE_UUID = getParcelUuid("FFF1");
     // 描述标识
     private static final ParcelUuid DESCRIPTOR_UUID = getParcelUuid("2902");
-
-    private BluetoothAdapter bluetoothAdapter;
 
     /**
      * 蓝牙操作回调
@@ -127,11 +124,6 @@ public class MyBleUtils {
 
 
     public MyBleUtils() {
-        BluetoothManager bluetoothManager = (BluetoothManager) Utils.getApp().getSystemService(Context.BLUETOOTH_SERVICE);
-        if (bluetoothManager == null) {
-            return;
-        }
-        bluetoothAdapter = bluetoothManager.getAdapter();
 
         BleBroadcastUtils.ON_RECEIVE_BLE_STATE_LISTENER_LIST.add(new BleBroadcastUtils.OnReceiveBleStateListener() {
             @Override

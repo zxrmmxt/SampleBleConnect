@@ -126,13 +126,18 @@ public class BleManager {
                         }
 
                         if (mBluetoothDevice == null) {
+                            myScanUtils.startBleScan();
                             return;
                         }
 
                         if (myBleUtils.isConnected()
                                 && TextUtils.equals(myBleUtils.getBleDevice().getAddress(), mBluetoothDevice.getAddress())) {
+                            myScanUtils.startBleScan();
                             return;
                         }
+
+                        myScanUtils.startBleScan();
+
                         disconnect();
                         myBleUtils.closeBle();
 

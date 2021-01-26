@@ -12,7 +12,6 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Build;
-import android.os.ParcelUuid;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
@@ -24,10 +23,6 @@ import java.util.List;
 
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class MyScanUtils {
-    private BluetoothAdapter bluetoothAdapter;
-
-    private BluetoothLeScanner bluetoothLeScanner;
-
     /**
      * 扫描时是否过滤serviceUUID
      */
@@ -65,15 +60,6 @@ public class MyScanUtils {
     };
 
     public MyScanUtils() {
-        BluetoothManager bluetoothManager = (BluetoothManager) Utils.getApp().getSystemService(Context.BLUETOOTH_SERVICE);
-        if (bluetoothManager == null) {
-            return;
-        }
-        bluetoothAdapter = bluetoothManager.getAdapter();
-        if (bluetoothAdapter == null) {
-            return;
-        }
-        bluetoothLeScanner = bluetoothAdapter.getBluetoothLeScanner();
     }
 
     public void addScanCallback(ScanCallback scanCallback) {
@@ -95,12 +81,14 @@ public class MyScanUtils {
         if (!isLocationOpen()) {
             return;
         }
+        BluetoothAdapter bluetoothAdapter = getBluetoothAdapter();
         if (bluetoothAdapter == null) {
             return;
         }
         if (!bluetoothAdapter.isEnabled()) {
             return;
         }
+        BluetoothLeScanner bluetoothLeScanner = getBluetoothLeScanner();
         if (bluetoothLeScanner == null) {
             return;
         }
@@ -145,5 +133,21 @@ public class MyScanUtils {
         // 通过WLAN或移动网络(3G/2G)确定的位置（也称作AGPS，辅助GPS定位。主要用于在室内或遮盖物（建筑群或茂密的深林等）密集的地方定位）
         boolean network = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
         return gps || network;
+    }
+
+    public static BluetoothAdapter getBluetoothAdapter() {
+        BluetoothManager bluetoothManager = (BluetoothManager) Utils.getApp().getSystemService(Context.BLUETOOTH_SERVICE);
+        if (bluetoothManager == null) {
+            return null;
+        }
+        return bluetoothManager.getAdapter();
+    }
+
+    public static BluetoothLeScanner getBluetoothLeScanner() {
+        BluetoothAdapter bluetoothAdapter = getBluetoothAdapter();
+        if (bluetoothAdapter == null) {
+            return null;
+        }
+        return bluetoothAdapter.getBluetoothLeScanner();
     }
 }
