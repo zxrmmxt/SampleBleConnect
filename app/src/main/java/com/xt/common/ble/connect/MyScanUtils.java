@@ -111,6 +111,14 @@ public class MyScanUtils {
         return builder.build();
     }
 
+    public void stopScan() {
+        BluetoothLeScanner bluetoothLeScanner = getBluetoothLeScanner();
+        if (bluetoothLeScanner == null) {
+            return;
+        }
+        bluetoothLeScanner.stopScan(mInnerScanCallback);
+    }
+
     private boolean isGranted(final String... permissions) {
         for (String permission : permissions) {
             if (!isGranted(permission)) {

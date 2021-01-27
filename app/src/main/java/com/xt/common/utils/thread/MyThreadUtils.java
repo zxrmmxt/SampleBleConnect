@@ -155,6 +155,17 @@ public class MyThreadUtils {
             }
         }
 
+        public void startLimitTimesTimerTak(long delay) {
+            {
+                mDelay = delay;
+            }
+            {
+                cancelLimitTimesTimerTask();
+                mLimitTimesTimerTask = new LimitTimesTimerTask(mTimes, mLimitTimesTimerTaskCallback);
+                startTimerTask(mLimitTimesTimerTask, mDelay, mPeriod);
+            }
+        }
+
         public void startLimitTimesTimerTak() {
             cancelLimitTimesTimerTask();
             mLimitTimesTimerTask = new LimitTimesTimerTask(mTimes, mLimitTimesTimerTaskCallback);

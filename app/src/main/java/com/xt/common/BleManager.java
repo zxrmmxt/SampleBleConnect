@@ -1,5 +1,6 @@
 package com.xt.common;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -7,9 +8,12 @@ import android.bluetooth.le.ScanResult;
 import android.os.Handler;
 import android.text.TextUtils;
 
+import com.blankj.utilcode.util.SPStaticUtils;
 import com.xt.common.ble.connect.MyBleUtils;
 import com.xt.common.ble.connect.MyScanUtils;
+import com.xt.common.utils.BleBroadcastUtils;
 import com.xt.common.utils.MyLogUtils;
+import com.xt.common.utils.thread.LimitTimesTimerTask;
 import com.xt.common.utils.thread.MyThreadUtils;
 
 public class BleManager {
@@ -27,6 +31,21 @@ public class BleManager {
     private Handler scanHandler = MyThreadUtils.getThreadHandler();
 
     private int connectingCounts;
+
+    private final Object connectBleLock = new Object();
+    private MyThreadUtils.LimitTimesTimerTaskController limitTimesTimerTaskController = new MyThreadUtils.LimitTimesTimerTaskController(Integer.MAX_VALUE, 0, 10000, new LimitTimesTimerTask.LimitTimesTimerTaskCallback() {
+        @Override
+        public void onDoTimerTask(int times) {
+            synchronized (connectBleLock){
+                doConnect();
+            }
+        }
+
+        @Override
+        public void onTimerTaskEnd() {
+
+        }
+    });
 
     public static BleManager getInstance() {
         if (instance == null) {
@@ -48,7 +67,7 @@ public class BleManager {
                 }
                 if (TextUtils.equals(myBleAction, MyBleUtils.ACTION_GATT_DISCONNECTED)) {
                     MyLogUtils.d(TAG, "BLE断开连接");
-                    doConnect();
+                    startConnectTask();
                 }
             }
         });
@@ -61,44 +80,104 @@ public class BleManager {
                 BleManager.this.onScanResult(result.getDevice());
             }
         });
+
+        BleBroadcastUtils.registerReceiver();
+        BleBroadcastUtils.ON_RECEIVE_BLE_STATE_LISTENER_LIST.add(new BleBroadcastUtils.OnReceiveBleStateListener() {
+            @Override
+            public void onReceiveBleState(String action, BluetoothDevice bluetoothDevice) {
+                if (TextUtils.equals(action, BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                    if (MyBleUtils.isEnable()) {
+                        startConnectTask();
+                    }
+                }
+            }
+        });
     }
 
     private void onScanResult(final BluetoothDevice device) {
-        final String name = device.getName();
-        if (TextUtils.isEmpty(name)) {
-            return;
-        }
-
-        if (!TextUtils.equals(name, BLE_NAME)) {
-            return;
-        }
-
-        scanHandler.post(new Runnable() {
+        MyThreadUtils.doBackgroundWork(new Runnable() {
             @Override
             public void run() {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                if (mBluetoothDevice != null) {
-                    if (TextUtils.equals(mBluetoothDevice.getName(), name)) {
-                        return;
-                    }
-                    mBluetoothDevice = null;
+                final String name = device.getName();
+                if (TextUtils.isEmpty(name)) {
+                    return;
                 }
 
                 if (!TextUtils.equals(name, BLE_NAME)) {
                     return;
                 }
 
-                mBluetoothDevice = device;
-                MyLogUtils.d(TAG, "扫描到的设备：" + mBluetoothDevice.getName());
+                scanHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
 
-                doConnect();
+                        if (mBluetoothDevice != null) {
+                            if (TextUtils.equals(mBluetoothDevice.getName(), name)) {
+                                return;
+                            }
+                            mBluetoothDevice = null;
+                        }
+
+                        if (!TextUtils.equals(name, BLE_NAME)) {
+                            return;
+                        }
+
+                        mBluetoothDevice = device;
+                        saveBleDevice2Local(device);
+                        MyLogUtils.d(TAG, "扫描到的设备：" + mBluetoothDevice.getName());
+
+                        startConnectTask();
+                    }
+                });
             }
         });
+    }
+
+    private void saveBleDevice2Local(BluetoothDevice device) {
+        if (device == null) {
+            return;
+        }
+        String name = device.getName();
+        String address = device.getAddress();
+        if (TextUtils.isEmpty(name)) {
+            return;
+        }
+        if (TextUtils.isEmpty(address)) {
+            return;
+        }
+        SPStaticUtils.put("BluetoothDeviceName", name);
+        SPStaticUtils.put("BluetoothDeviceAddress", address);
+    }
+
+    private BluetoothDevice getLocalBleDevice() {
+        String bluetoothDeviceName = SPStaticUtils.getString("BluetoothDeviceName");
+        if (TextUtils.isEmpty(bluetoothDeviceName)) {
+            return null;
+        }
+        if (!TextUtils.equals(bluetoothDeviceName, getBleDeviceName2Connect())) {
+            return null;
+        }
+        String bluetoothDeviceAddress = SPStaticUtils.getString("BluetoothDeviceAddress");
+        if (TextUtils.isEmpty(bluetoothDeviceAddress)) {
+            scanBle();
+            return null;
+        }
+
+        BluetoothAdapter bluetoothAdapter = MyBleUtils.getBluetoothAdapter();
+        if (bluetoothAdapter == null) {
+            return null;
+        }
+        return bluetoothAdapter.getRemoteDevice(bluetoothDeviceAddress);
+    }
+
+    public void startConnectTask() {
+        limitTimesTimerTaskController.startLimitTimesTimerTak();
+        scanBle();
     }
 
     public void doConnect() {
@@ -107,10 +186,26 @@ public class BleManager {
             public void run() {
 
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+
+                if (mBluetoothDevice == null) {
+                    mBluetoothDevice = getLocalBleDevice();
+                }
+                if (mBluetoothDevice == null) {
+                    scanBle();
+                    return;
+                }
+
+                if (!TextUtils.equals(mBluetoothDevice.getName(), getBleDeviceName2Connect())) {
+                    mBluetoothDevice = null;
+                    scanBle();
+                    return;
+                }
+
+                myScanUtils.stopScan();
 
                 MyThreadUtils.doBackgroundWork(new Runnable() {
                     @Override
@@ -154,6 +249,17 @@ public class BleManager {
         myBleUtils.disconnect();
     }
 
+    /**
+     * 过滤扫描
+     * <p>
+     * 连接判断
+     *
+     * @return
+     */
+    public String getBleDeviceName2Connect() {
+        return BLE_NAME;
+    }
+
     public MyBleUtils getMyBleUtils() {
         return myBleUtils;
     }
@@ -163,6 +269,6 @@ public class BleManager {
     }
 
     public void scanBle() {
-        BleManager.getInstance().getMyScanUtils().startBleScan(new ScanFilter.Builder().setDeviceName("OPPO R11s Plus"));
+        myScanUtils.startBleScan(new ScanFilter.Builder().setDeviceName(getBleDeviceName2Connect()));
     }
 }

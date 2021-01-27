@@ -28,14 +28,13 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                BleManager.getInstance().doConnect();
+                BleManager.getInstance().startConnectTask();
             }
         });
         aa();
     }
 
     private void aa() {
-        BleBroadcastUtils.registerReceiver();
         String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
         if (PermissionUtils.isGranted(permissions)) {
             MyBleUtils.enable();
