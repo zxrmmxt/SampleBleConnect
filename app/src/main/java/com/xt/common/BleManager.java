@@ -16,6 +16,8 @@ import com.xt.common.utils.MyLogUtils;
 import com.xt.common.utils.thread.LimitTimesTimerTask;
 import com.xt.common.utils.thread.MyThreadUtils;
 
+import java.util.ArrayList;
+
 public class BleManager {
     private static final String TAG = BleManager.class.getSimpleName();
     private static BleManager instance;
@@ -269,6 +271,8 @@ public class BleManager {
     }
 
     public void scanBle() {
-        myScanUtils.startBleScan(new ScanFilter.Builder().setDeviceName(getBleDeviceName2Connect()));
+        ArrayList<ScanFilter.Builder> builders = new ArrayList<>();
+        builders.add(new ScanFilter.Builder().setDeviceName(getBleDeviceName2Connect()));
+        myScanUtils.startBleScan(builders);
     }
 }

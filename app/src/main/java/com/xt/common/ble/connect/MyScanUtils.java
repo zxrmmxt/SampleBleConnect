@@ -74,7 +74,17 @@ public class MyScanUtils {
         startBleScan(null);
     }
 
-    public void startBleScan(ScanFilter.Builder builder) {
+    public void startBleScan(List<ScanFilter.Builder> builderList) {
+        List<ScanFilter> scanFilters = new ArrayList<>();
+        if (builderList != null) {
+            for (ScanFilter.Builder builder : builderList) {
+                scanFilters.add(builder.build());
+            }
+        }
+        startBleScanList(scanFilters);
+    }
+
+    public void startBleScanList(List<ScanFilter> scanFilterList) {
         if (!isGranted(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)) {
             return;
         }
@@ -94,15 +104,7 @@ public class MyScanUtils {
         }
 
         bluetoothLeScanner.stopScan(mInnerScanCallback);
-        bluetoothLeScanner.startScan(buildScanFilters(builder), buildScanSettings(), mInnerScanCallback);
-    }
-
-    private List<ScanFilter> buildScanFilters(ScanFilter.Builder builder) {
-        List<ScanFilter> scanFilters = new ArrayList<>();
-        if (builder != null) {
-            scanFilters.add(builder.build());
-        }
-        return scanFilters;
+        bluetoothLeScanner.startScan(scanFilterList, buildScanSettings(), mInnerScanCallback);
     }
 
     private ScanSettings buildScanSettings() {
