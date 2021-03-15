@@ -204,6 +204,7 @@ public class BleManager {
                 if (!TextUtils.equals(mBluetoothDevice.getName(), getBleDeviceName2Connect())) {
                     mBluetoothDevice = null;
                     scanBle();
+                    disconnect();
                     return;
                 }
 
