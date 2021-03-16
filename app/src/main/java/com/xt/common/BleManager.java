@@ -105,7 +105,7 @@ public class BleManager {
                     return;
                 }
 
-                if (!TextUtils.equals(name, BLE_NAME)) {
+                if (!TextUtils.equals(name, getBleDeviceName2Connect())) {
                     return;
                 }
 
@@ -125,7 +125,7 @@ public class BleManager {
                             mBluetoothDevice = null;
                         }
 
-                        if (!TextUtils.equals(name, BLE_NAME)) {
+                        if (!TextUtils.equals(name, getBleDeviceName2Connect())) {
                             return;
                         }
 
@@ -193,6 +193,12 @@ public class BleManager {
                     e.printStackTrace();
                 }
 
+                if (myBleUtils.isConnected()
+                        && (!TextUtils.equals(myBleUtils.getBleDevice().getName(), getBleDeviceName2Connect()))) {
+                    disconnect();
+                    myBleUtils.closeBle();
+                }
+
                 if (mBluetoothDevice == null) {
                     mBluetoothDevice = getLocalBleDevice();
                 }
@@ -204,7 +210,6 @@ public class BleManager {
                 if (!TextUtils.equals(mBluetoothDevice.getName(), getBleDeviceName2Connect())) {
                     mBluetoothDevice = null;
                     scanBle();
-                    disconnect();
                     return;
                 }
 
@@ -224,17 +229,14 @@ public class BleManager {
                         }
 
                         if (mBluetoothDevice == null) {
-                            myScanUtils.startBleScan();
+                            scanBle();
                             return;
                         }
 
                         if (myBleUtils.isConnected()
                                 && TextUtils.equals(myBleUtils.getBleDevice().getAddress(), mBluetoothDevice.getAddress())) {
-                            myScanUtils.startBleScan();
                             return;
                         }
-
-                        myScanUtils.startBleScan();
 
                         disconnect();
                         myBleUtils.closeBle();
