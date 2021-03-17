@@ -81,10 +81,6 @@ public class MyScanUtils {
                 scanFilters.add(builder.build());
             }
         }
-        startBleScanList(scanFilters);
-    }
-
-    public void startBleScanList(List<ScanFilter> scanFilterList) {
         if (!isGranted(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)) {
             return;
         }
@@ -104,7 +100,7 @@ public class MyScanUtils {
         }
 
         bluetoothLeScanner.stopScan(mInnerScanCallback);
-        bluetoothLeScanner.startScan(scanFilterList, buildScanSettings(), mInnerScanCallback);
+        bluetoothLeScanner.startScan(scanFilters, buildScanSettings(), mInnerScanCallback);
     }
 
     private ScanSettings buildScanSettings() {
